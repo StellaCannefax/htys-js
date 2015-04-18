@@ -1,19 +1,20 @@
 ﻿var stats, scene, renderer, composer;
 var camera, cameraControl;
 var cubes = [];
+var spheres = [];
 
 var randomIntTable = [];
 for (var i = 1e4, randomIntTable = []; i--;) {
     var negative = 1;
     if (Math.random() > .5) { negative = -1;};
-    randomIntTable.push((Math.random() * 43 | 0) * negative);
+    randomIntTable.push((Math.random() * 36 | 0) * negative);
 }
 function randomInt() {
     return ++i >= randomIntTable.length ? randomIntTable[i = 0] : randomIntTable[i];
 }
 
 function shuffle() {
-    var chance = 0.1;
+    var chance = 0.2;
     scene.traverse(function (object3d, i) {
         if (object3d instanceof THREE.Mesh === false) return
         if (Math.random() < chance) {
@@ -114,43 +115,21 @@ function init() {
                 .normalize().multiplyScalar(1.2);
     scene.add(light);
 
-    for (var i = 1 ; i <= 200; i++) {
-        var geometry = new THREE.BoxGeometry(2, 2, 2);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
     for (var i = 1 ; i <= 360; i++) {
-        var geometry = new THREE.BoxGeometry(1, 1, 1);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        cubes.push(mesh);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 420; i++) {
-        var geometry = new THREE.BoxGeometry(.5, .5, .5);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 420; i++) {
         var geometry = new THREE.BoxGeometry(.333, .333, .333);
         var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
-    for (var i = 1 ; i <= 420; i++) {
+    for (var i = 1 ; i <= 360; i++) {
         var geometry = new THREE.BoxGeometry(.25, .25, .25);
         var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
-    for (var i = 1 ; i <= 666; i++) {
+    for (var i = 1 ; i <= 420; i++) {
         var geometry = new THREE.BoxGeometry(.2, .2, .2);
         var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
@@ -161,16 +140,8 @@ function init() {
 
 // animation loop
 function animate() {
-
-    // loop on request animation loop
-    // - it has to be at the begining of the function
-    // - see details at http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
     requestAnimationFrame(animate);
-
-    // do the render
     render();
-
-    // update stats
     stats.update();
 }
 
@@ -178,10 +149,7 @@ function animate() {
 function render() {
     // variable which is increase by Math.PI every seconds - usefull for animation
     var PIseconds = Date.now() * Math.PI;
-
-    // update camera controls
     cameraControls.update();
-
     // animation of all objects
     scene.traverse(function (object3d, i) {
         if (object3d instanceof THREE.Mesh === false) return
@@ -195,11 +163,11 @@ function render() {
         object3d.position.set(Math.cos(ang), Math.sin(ang), Math.cos(ang * 2)).normalize();
     })*/
     // animate PointLights
-    scene.traverse(function (object3d, idx) {
+    /*scene.traverse(function (object3d, idx) {
         if (object3d instanceof THREE.PointLight === false) return
         var angle = 0.0005 * PIseconds * (idx % 2 ? 1 : -1) + idx * Math.PI / 3;
         object3d.position.set(Math.cos(angle) * 3, Math.sin(angle * 3) * 2, Math.cos(angle * 2)).normalize().multiplyScalar(2);
-    })
+    })*/
 
     // actually render the scene
     renderer.render(scene, camera);
