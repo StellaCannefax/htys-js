@@ -1,19 +1,20 @@
 ﻿// Speedstars, track 1
-var Speedstars = new SongSettings(
-    "audio/Speedstars.mp3", 
+songs.Speedstars = new SongSettings(
+    "audio/Speedstars.mp3",
     {
         decay: 0.002,
         threshold: 0.32,
-        frequency : [0, 4],
-        onKick: function ( mag ) {
-            shuffle();
+        frequency: [0, 4],
+        onKick: function (mag) {
+            //shuffle(.333);
+            moveUp(1.25);
         }
     },
     [
         {
-            time: 2, 
+            time: 2,
             handler: function () {
-                for (var i = 1 ; i <= 240; i++) {
+                for (var i = 1 ; i <= 160; i++) {
                     var geometry = new THREE.BoxGeometry(.5, .5, .5);
                     var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
                     var mesh = new THREE.Mesh(geometry, material);
@@ -24,9 +25,10 @@ var Speedstars = new SongSettings(
             }
         },
         {
-            time: 7.5, 
+            time: 7.5,
             handler: function () {
-                for (var i = 1 ; i <= 240; i++) {
+                dancer.setInterval(function () { shuffle(0.05) }, 100);
+                for (var i = 1 ; i <= 160; i++) {
                     var geometry = new THREE.BoxGeometry(1, 1, 1);
                     var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
                     var mesh = new THREE.Mesh(geometry, material);
@@ -37,9 +39,9 @@ var Speedstars = new SongSettings(
             }
         },
         {
-            time: 22.5, 
+            time: 22.5,
             handler: function () {
-                for (var i = 1 ; i <= 160; i++) {
+                for (var i = 1 ; i <= 100; i++) {
                     var geometry = new THREE.BoxGeometry(2, 2, 2);
                     var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
                     var mesh = new THREE.Mesh(geometry, material);
@@ -49,9 +51,9 @@ var Speedstars = new SongSettings(
             }
         },
         {
-            time: 60, 
+            time: 60,
             handler: function () {
-                for (var i = 1 ; i <= 200; i++) {
+                for (var i = 1 ; i <= 100; i++) {
                     var geometry = new THREE.SphereGeometry(1);
                     var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
                     var mesh = new THREE.Mesh(geometry, material);
@@ -64,9 +66,17 @@ var Speedstars = new SongSettings(
         {
             time: 104.5,
             handler: function () {
-                document.getElementsByTagName("canvas")[0].className = "wtf";
+                $("canvas").toggleClass("wtf");
+                dancer.setInterval(function () { shuffle(0.1) }, 50);
+            }
+        },
+        {
+            time: 135.2,
+            handler: function () {
+                dancer.intervals.forEach(function (e) {
+                    clearInterval(e);       // stop all the shufflin'
+                });
             }
         }
     ]
 );
-    

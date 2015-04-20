@@ -1,4 +1,5 @@
 ﻿var dancer = new Dancer();
+var songs = {};
 
 // events is an array of objects , each containing
 // "time" , the value in seconds for when to trigger, & 
