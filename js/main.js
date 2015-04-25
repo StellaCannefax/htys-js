@@ -1,4 +1,5 @@
 ﻿var stats, scene, renderer, composer;
+var rgbEffect, dotScreen, Kaleido;
 var camera, cameraControl;
 var cubes = [];
 var spheres = [];
@@ -128,6 +129,22 @@ function init() {
     camera.position.set(0, 0, 460);
     scene.add(camera);
 
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+
+    dotScreen = new THREE.ShaderPass(THREE.DotScreenShader);
+    dotScreen.uniforms['scale'].value = 4;
+    composer.addPass(dotScreen);
+
+    Kaleido = new THREE.ShaderPass(THREE.KaleidoShader);
+    Kaleido.uniforms['sides'].value = 4;
+    composer.addPass(Kaleido);
+
+    rgbEffect = new THREE.ShaderPass(THREE.RGBShiftShader);
+    rgbEffect.uniforms['amount'].value = 0.0033;
+    rgbEffect.renderToScreen = true;
+    composer.addPass(rgbEffect);
+
     // create a camera contol
     cameraControls = new THREEx.DragPanControls(camera)
 
@@ -141,16 +158,11 @@ function init() {
         document.getElementById('inlineDoc').innerHTML += "- <i>f</i> for fullscreen";
     }
 
-    // here you add your objects
-    // - you will most likely replace this part by your own
     var light = new THREE.AmbientLight(Math.random() * 0xffffff);
     scene.add(light);
     var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
     light.position.set(Math.random(), Math.random(), Math.random()).normalize();
     scene.add(light);
-    /*var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
-    light.position.set(Math.random(), Math.random(), Math.random()).normalize();
-    scene.add(light);*/
     var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
     light.position.set(Math.random(), Math.random(), Math.random()).normalize();
     scene.add(light);
@@ -188,6 +200,14 @@ function init() {
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
+
+    // dat.gui code
+    var gui = new dat.GUI();
+    gui.add(rgbEffect.uniforms['amount'], 'value').name("RGB Shift value").listen();
+    gui.add(dotScreen.uniforms['scale'], 'value').name("Dot Screen scale").listen();
+    gui.add(Kaleido.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
+    gui.add(Kaleido.uniforms['sides'], 'value').name("Kaledioscope sides")
+        .min(3).max(12).step(1).listen();
 }
 
 // animation loop
@@ -197,20 +217,32 @@ function animate() {
     stats.update();
 }
 
+
+var rotationSpeed = 0.0025;
 // render the scene
 function render() {
     // variable which is increase by Math.PI every seconds - usefull for animation
     var PIseconds = Date.now() * Math.PI;
     cameraControls.update();
+
+    // hook into the FFT of the song
     if (dancer.isPlaying()) {
-        renderer.setClearColor(dancer.getFrequency(160,420) * 2 * 0xffffff , 0.5);
+        renderer.setClearColor(dancer.getFrequency(160, 420) * 2 * 0xffffff, 1);
+        rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
+        rotationSpeed = 0.0025 + dancer.getFrequency(0, 5);
+        dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
+        if (Kaleido.uniforms['angle'] >= 360) {
+            Kaleido.uniforms['angle'] = 0;
+        }
+        if (rotationSpeed < 0.095) { rotationSpeed = 0.002; }
+        Kaleido.uniforms['angle'].value += rotationSpeed;
     }
     // animation of all objects
     scene.traverse(function (object3d, i) {
         if (object3d instanceof THREE.Mesh === false) return
         object3d.rotation.y = PIseconds * 0.0005 * (i % 2 ? 1 : -1);
         object3d.rotation.x = PIseconds * 0.0004 * (i % 2 ? 1 : -1);
-    })
+    });
     // animate DirectionalLight
     /*scene.traverse(function (object3d, idx) {
         if (object3d instanceof THREE.DirectionalLight === false) return
@@ -225,5 +257,5 @@ function render() {
     });
 
     // actually render the scene
-    renderer.render(scene, camera);
+    composer.render(scene, camera);
 }
