@@ -1,7 +1,7 @@
 ﻿var stats, scene, renderer, composer;
-var rgbEffect, dotScreen, Kaleido;
+var rgbEffect, dotScreen, Kaleido, Edge;
 var camera, cameraControl;
-var cubes = [];
+var currentSong, PIseconds;
 var spheres = [];
 
 var canvas = document.getElementsByTagName("canvas")[0];
@@ -10,17 +10,25 @@ var dancer = new Dancer();
 dancer.intervals = [];
 songs = {};
 
+function bpm2ms(bpm) {
+    return 1 / (bpm / 60000);
+}
+
 // events is an array of objects , each containing
 // "time" , the value in seconds for when to trigger, & 
 // "handler", the function that actually modifies behavior
-var SongSettings = function (url, kickSettings, events) {  
-    this.kick = dancer.createKick(kickSettings);
+var SongSettings = function (url, bpm, kickSettings, renderLoop, events) {  
     this.url = url;
+    this.bpm = bpm;
+    this.kick = dancer.createKick(kickSettings);
     this.events = events;
+    this.renderLoop = renderLoop;
 }
 
-// extension method for dancer.js, feed a songsettings object
+// extension methodS for dancer.js follow 
+// feed this one a SongSettings object
 dancer.startNewSong = function (song) {
+    currentSong = song;
     this.load({ src: song.url });                
     song.events.forEach(function (event) {          
         dancer.onceAt(event.time, event.handler);   // register custom events    
@@ -33,6 +41,11 @@ dancer.setInterval = function (func) {
     this.intervals.push(setInterval(func));
 }
 
+dancer.clearAllIntervals = function () {
+    this.intervals.forEach(function (e) {
+        clearInterval(e);       // stop all the shufflin'
+    });
+}
 // WEBGL / THREE.js CODE AFTER HERE
 var randomIntTable = [];
 for (var i = 1e4, randomIntTable = []; i--;) {
@@ -79,7 +92,6 @@ function addMultipleRandom(geometryType, count, size) {
         var geometry = new geometryType(size, size, size);
         var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
-        cubes.push(mesh);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
@@ -140,6 +152,10 @@ function init() {
     Kaleido.uniforms['sides'].value = 4;
     composer.addPass(Kaleido);
 
+    //Edge = new THREE.ShaderPass(THREE.EdgeShader2);
+    //Edge.uniforms['tDiffuse'].value = 20;
+    //composer.addPass(Edge);
+
     rgbEffect = new THREE.ShaderPass(THREE.RGBShiftShader);
     rgbEffect.uniforms['amount'].value = 0.0033;
     rgbEffect.renderToScreen = true;
@@ -170,10 +186,10 @@ function init() {
     light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
                 .normalize().multiplyScalar(1.2);
     scene.add(light);
-    var light = new THREE.PointLight(Math.random() * 0xffffff);
+    /*var light = new THREE.PointLight(Math.random() * 0xffffff);
     light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
                 .normalize().multiplyScalar(1.2);
-    scene.add(light);
+    scene.add(light);*/
     /*var light = new THREE.PointLight(Math.random() * 0xffffff);
     light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
                 .normalize().multiplyScalar(1.2);
@@ -181,21 +197,21 @@ function init() {
 
     for (var i = 1 ; i <= 240; i++) {
         var geometry = new THREE.BoxGeometry(.333, .333, .333);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
-    for (var i = 1 ; i <= 240; i++) {
+    for (var i = 1 ; i <= 200; i++) {
         var geometry = new THREE.BoxGeometry(.25, .25, .25);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
     }
-    for (var i = 1 ; i <= 360; i++) {
+    for (var i = 1 ; i <= 200; i++) {
         var geometry = new THREE.BoxGeometry(.2, .2, .2);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
         mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
@@ -217,45 +233,15 @@ function animate() {
     stats.update();
 }
 
-
-var rotationSpeed = 0.0025;
 // render the scene
 function render() {
     // variable which is increase by Math.PI every seconds - usefull for animation
-    var PIseconds = Date.now() * Math.PI;
+    PIseconds = Date.now() * Math.PI;
     cameraControls.update();
-
-    // hook into the FFT of the song
-    if (dancer.isPlaying()) {
-        renderer.setClearColor(dancer.getFrequency(160, 420) * 2 * 0xffffff, 1);
-        rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
-        rotationSpeed = 0.0025 + dancer.getFrequency(0, 5);
-        dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
-        if (Kaleido.uniforms['angle'] >= 360) {
-            Kaleido.uniforms['angle'] = 0;
-        }
-        if (rotationSpeed < 0.095) { rotationSpeed = 0.002; }
-        Kaleido.uniforms['angle'].value += rotationSpeed;
+    //song-specific code that goes in the render loop
+    if (currentSong != null) {
+        currentSong.renderLoop();    
     }
-    // animation of all objects
-    scene.traverse(function (object3d, i) {
-        if (object3d instanceof THREE.Mesh === false) return
-        object3d.rotation.y = PIseconds * 0.0005 * (i % 2 ? 1 : -1);
-        object3d.rotation.x = PIseconds * 0.0004 * (i % 2 ? 1 : -1);
-    });
-    // animate DirectionalLight
-    /*scene.traverse(function (object3d, idx) {
-        if (object3d instanceof THREE.DirectionalLight === false) return
-        var ang = 0.0005 * PIseconds * (idx % 2 ? 1 : -1);
-        object3d.position.set(Math.cos(ang), Math.sin(ang), Math.cos(ang * 2)).normalize();
-    })*/
-    // animate PointLights
-    scene.traverse(function (object3d, idx) {
-        if (object3d instanceof THREE.PointLight === false) return
-        var angle = 0.0005 * PIseconds * (idx % 2 ? 1 : -1) + idx * Math.PI / 3;
-        object3d.position.set(Math.cos(angle) * 3, Math.sin(angle * 3) * 2, Math.cos(angle * 2)).normalize().multiplyScalar(2);
-    });
-
     // actually render the scene
     composer.render(scene, camera);
 }
