@@ -1,6 +1,6 @@
 songs.Slideways = new SongSettings(
     "audio/Slideways.mp3",
-    90,
+    90,     // bpm
     {
         decay: 0.001,
         threshold: 0.55,
@@ -16,13 +16,14 @@ songs.Slideways = new SongSettings(
         if (dancer.isPlaying()) {
             renderer.setClearColor(dancer.getFrequency(160, 420) / 64 * 0xffffff, 1);
             rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
-            rotationSpeed = 0.0025 + dancer.getFrequency(0, 5) / 2;
-            dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
+            rgbEffect.uniforms['angle'].value = Kaleido.uniforms['angle'].value * -6;
+            rotationSpeed = 0.0025 + dancer.getFrequency(0, 5) / 3;
+            dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420 * 2;
             // clamp angle values for kaledioscope
             if (Kaleido.uniforms['angle'] >= 360) {
                 Kaleido.uniforms['angle'] -= 360;
             }
-            if (rotationSpeed < 0.06) { rotationSpeed = 0.0025; }
+            if (rotationSpeed < 0.05) { rotationSpeed = 0.0025; }
             Kaleido.uniforms['angle'].value += rotationSpeed;
         }
         // animation of all objects
@@ -44,7 +45,7 @@ songs.Slideways = new SongSettings(
         {
             time: 2.2,
             handler: function () {
-                for (var i = 1 ; i <= 300; i++) {
+                for (var i = 1 ; i <= 420; i++) {
                     var geometry = new THREE.BoxGeometry(.666, .666, .666);
                     var material = new THREE.MeshLambertMaterial({
                         ambient: 0x808080,
@@ -60,7 +61,7 @@ songs.Slideways = new SongSettings(
         {
             time: 11,
             handler: function () {
-                dancer.setInterval(function () { shuffle(.1); }, bpm2ms(currentSong.bpm) / 4);
+                dancer.setInterval(function () { shuffle(.08); }, bpm2ms(currentSong.bpm) / 4);
             }
         },
         {

@@ -17,12 +17,17 @@ function bpm2ms(bpm) {
 // events is an array of objects , each containing
 // "time" , the value in seconds for when to trigger, & 
 // "handler", the function that actually modifies behavior
-var SongSettings = function (url, bpm, kickSettings, renderLoop, events) {  
+var SongSettings = function (url, bpm, kickSettings, renderLoop, events, setup) {
     this.url = url;
     this.bpm = bpm;
     this.kick = dancer.createKick(kickSettings);
     this.events = events;
     this.renderLoop = renderLoop;
+    if (typeof setup === 'undefined') {
+        this.setup = function () { };
+    } else {
+        this.setup = setup;
+    }
 }
 
 // extension methodS for dancer.js follow 
@@ -61,7 +66,7 @@ function shuffle(chance) {
     scene.traverse(function (object3d, i) {
         if (object3d instanceof THREE.Mesh === false) return
         if (Math.random() < chance) {
-            object3d.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
+            object3d.position.set(randomInt(), randomInt(), randomInt());
         }
     })
 }
@@ -156,7 +161,7 @@ function init() {
     //Edge.uniforms['tDiffuse'].value = 20;
     //composer.addPass(Edge);
 
-    rgbEffect = new THREE.ShaderPass(THREE.RGBShiftShader);
+    rgbEffect = new THREE.ShaderPass(THREE.RGBShiftShader2);
     rgbEffect.uniforms['amount'].value = 0.0033;
     rgbEffect.renderToScreen = true;
     composer.addPass(rgbEffect);
@@ -167,11 +172,10 @@ function init() {
     // transparently support window resize
     THREEx.WindowResize.bind(renderer, camera);
     // allow 'p' to make screenshot
-    THREEx.Screenshot.bindKey(renderer);
+    //THREEx.Screenshot.bindKey(renderer);
     // allow 'f' to go fullscreen where this feature is supported
     if (THREEx.FullScreen.available()) {
         THREEx.FullScreen.bindKey();
-        document.getElementById('inlineDoc').innerHTML += "- <i>f</i> for fullscreen";
     }
 
     var light = new THREE.AmbientLight(Math.random() * 0xffffff);
@@ -196,30 +200,31 @@ function init() {
     scene.add(light);*/
 
     for (var i = 1 ; i <= 240; i++) {
+        var geometry = new THREE.BoxGeometry(.5, .5, .5);
+        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        mesh.position.set(randomInt(), randomInt(), randomInt());
+    }
+    for (var i = 1 ; i <= 200; i++) {
+        var geometry = new THREE.BoxGeometry(1, 1, 1);
+        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        mesh.position.set(randomInt(), randomInt(), randomInt());
+    }
+    for (var i = 1 ; i <= 200; i++) {
         var geometry = new THREE.BoxGeometry(.333, .333, .333);
         var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
         var mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 200; i++) {
-        var geometry = new THREE.BoxGeometry(.25, .25, .25);
-        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 200; i++) {
-        var geometry = new THREE.BoxGeometry(.2, .2, .2);
-        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
+        mesh.position.set(randomInt(), randomInt(), randomInt());
     }
 
     // dat.gui code
     var gui = new dat.GUI();
     gui.add(rgbEffect.uniforms['amount'], 'value').name("RGB Shift value").listen();
+    gui.add(rgbEffect.uniforms['angle'], 'value').name("RGB Shift angle").listen();
     gui.add(dotScreen.uniforms['scale'], 'value').name("Dot Screen scale").listen();
     gui.add(Kaleido.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
     gui.add(Kaleido.uniforms['sides'], 'value').name("Kaledioscope sides")
