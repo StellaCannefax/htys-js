@@ -45,38 +45,20 @@ songs.Speedstars = new SongSettings({
         {
             time: 2,
             handler: function () {
-                for (var i = 1 ; i <= 40; i++) {
-                    var geometry = new THREE.BoxGeometry(.5, .5, .5);
-                    var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
-                    var mesh = new THREE.Mesh(geometry, material);
-                    scene.add(mesh);
-                    mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-                }
+                makeRandomGeometries([.5, .5, .5], 100, THREE.BoxGeometry, THREE.MeshPhongMaterial);
             }
         },
         {
             time: 7.5,
             handler: function () {
+                makeRandomGeometries([1, 1, 1], 80, THREE.BoxGeometry, THREE.MeshLambertMaterial);
                 dancer.setInterval(function () { shuffle(0.05) }, 100);
-                for (var i = 1 ; i <= 80; i++) {
-                    var geometry = new THREE.BoxGeometry(1, 1, 1);
-                    var material = new THREE.MeshLambertMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
-                    var mesh = new THREE.Mesh(geometry, material);
-                    scene.add(mesh);
-                    mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-                }
             }
         },
         {
             time: 22.5,
             handler: function () {
-                for (var i = 1 ; i <= 80; i++) {
-                    var geometry = new THREE.BoxGeometry(2, 2, 2);
-                    var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-                    var mesh = new THREE.Mesh(geometry, material);
-                    scene.add(mesh);
-                    mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-                }
+                makeRandomGeometries([2, 2, 2], 80, THREE.BoxGeometry, THREE.MeshLambertMaterial);
             }
         },
         {
@@ -105,13 +87,7 @@ songs.Speedstars = new SongSettings({
     ],
     setup: function () {
         console.log("setting up / playing Speedstars...");
-        for (var i = 1 ; i <= 200; i++) {
-            var geometry = new THREE.BoxGeometry(1, 1, 1);
-            var material = new THREE.MeshLambertMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
-            var mesh = new THREE.Mesh(geometry, material);
-            scene.add(mesh);
-            mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-        }
+        makeRandomGeometries([1, 1, 1], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
     }
 });
 

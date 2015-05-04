@@ -120,8 +120,7 @@ prepare.stats = function () {
 }
 
 prepare.lights = function() {
-    var light = new THREE.AmbientLight(Math.random() * 0xffffff);
-    scene.add(light);
+    scene.add(new THREE.AmbientLight(Math.random() * 0xffffff));
     for (var i = 0; i < 2; i++) {
         var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
         light.position.set(Math.random(), Math.random(), Math.random()).normalize();
@@ -197,11 +196,11 @@ function render() {
         currentSong.renderLoop();           // song specific code here
     }
 
-    if (composer.passes.length > 1) {           // if we only have a RenderPass in the composer    
+    if (composer.passes.length > 1) {           // if we only have a RenderPass in the composer,    
         composer.render(scene, camera);         // skip it and render from the renderer directly
     } else {                                    // this allows instantiating the composer
-        renderer.render(scene, camera);         // before we want to use effects
-    }
+        renderer.render(scene, camera);         // before we want to use effects, which
+    }                                           // makes it easier to change on the fly
 }
 
 if (Detector.webgl) {                       // do stuff if we're WebGL compatible
