@@ -1,6 +1,6 @@
 songs.Slideways = new SongSettings({
     url: "audio/Slideways.mp3",
-    bpm: 90,
+    bpm: 90,     
     kickSettings: {
         decay: 0.001,
         threshold: 0.55,
@@ -13,10 +13,10 @@ songs.Slideways = new SongSettings({
         // hook into the FFT of the song
         if (dancer.isPlaying()) {
             renderer.setClearColor(dancer.getFrequency(160, 420) / 64 * 0xffffff, 0.333);
-            postFX.rgbShift.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
-            postFX.rgbShift.uniforms['angle'].value = postFX.Kaleidoscope.uniforms['angle'].value * -6;
+            rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
+            rgbEffect.uniforms['angle'].value = postFX.Kaleidoscope.uniforms['angle'].value * -6;
             rotationSpeed = 0.0025 + dancer.getFrequency(0, 5) / 3;
-            postFX.DotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420 * 2;
+            dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420 * 2;
             // clamp angle values for kaledioscope
             if (postFX.Kaleidoscope.uniforms['angle'] >= 360) {
                 postFX.Kaleidoscope.uniforms['angle'] -= 360;
@@ -78,8 +78,7 @@ songs.Slideways = new SongSettings({
             handler: dancer.clearAllIntervals
         }
     ],
-    setup: function () {
-        $("#bg").css("background-image", "url(" + "http://tigre.space/gifs/killlakill_2.gif" + ")")
-        $("#bg").css("background-size", "cover")
+    setup: function(){
+        //$("html").css("background-image", "url(" + )
     }
-});
+);

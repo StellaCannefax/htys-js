@@ -1,30 +1,30 @@
 ﻿// Speedstars, track 1
-songs.Speedstars = new SongSettings(
-    "audio/Speedstars.mp3",
-    128,    
-    {
+songs.Speedstars = new SongSettings({
+    url: "audio/Speedstars.mp3",
+    bpm: 128,
+    kickSettings: {
         decay: 0.002,
         threshold: 0.32,
         frequency: [0, 4],
         onKick: function (mag) {
             //shuffle(.333);
             moveUp(1.25);
-            //Kaleido.uniform['sides'] += 1;
+            //postFX.Kaleidoscope.uniform['sides'] += 1;
         }
     },
-    function () {
+    renderLoop: function () {
         // hook into the FFT of the song
         if (dancer.isPlaying()) {
             renderer.setClearColor(dancer.getFrequency(160, 420) / 64 * 0xffffff, 0.333);
-            rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
+            postFX.rgbShift.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
             rotationSpeed = 0.005 + dancer.getFrequency(0, 5);
-            dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
+            postFX.DotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
             // clamp angle values for kaledioscope
-            if (Kaleido.uniforms['angle'] >= 360) {
-                Kaleido.uniforms['angle'] -= 360;
+            if (postFX.Kaleidoscope.uniforms['angle'] >= 360) {
+                postFX.Kaleidoscope.uniforms['angle'] -= 360;
             }
             //if (rotationSpeed < 0.08) { rotationSpeed = 0.005; }
-            Kaleido.uniforms['angle'].value += rotationSpeed;
+            postFX.Kaleidoscope.uniforms['angle'].value += rotationSpeed;
         }
         // animation of all objects
         scene.traverse(function (object3d, i) {
@@ -41,7 +41,7 @@ songs.Speedstars = new SongSettings(
                 .normalize().multiplyScalar(2);
         });
     },
-    [
+    events: [
         {
             time: 2,
             handler: function () {
@@ -103,8 +103,7 @@ songs.Speedstars = new SongSettings(
             handler: dancer.clearAllIntervals
         }
     ],
-    //setup
-    function () {
+    setup: function () {
         console.log("setting up / playing Speedstars...");
         for (var i = 1 ; i <= 200; i++) {
             var geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -114,6 +113,6 @@ songs.Speedstars = new SongSettings(
             mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
         }
     }
-);
+});
 
 
