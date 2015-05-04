@@ -1,10 +1,7 @@
-﻿var stats, scene, renderer, composer;
-var rgbEffect, dotScreen, Kaleido, Edge;
-var camera, cameraControl;
-var currentSong, PIseconds;
-var spheres = [];
-
+﻿var stats, scene, renderer, composer, camera, cameraControl, currentSong, PIseconds;
 var canvas = document.getElementsByTagName("canvas")[0];
+var postFX = {};
+
 // DANCER / SONG RELATED CODE IN HERE
 var dancer = new Dancer();
 dancer.intervals = [];
@@ -17,28 +14,32 @@ function bpm2ms(bpm) {
 // events is an array of objects , each containing
 // "time" , the value in seconds for when to trigger, & 
 // "handler", the function that actually modifies behavior
-var SongSettings = function (url, bpm, kickSettings, renderLoop, events, setup) {
-    this.url = url;
-    this.bpm = bpm;
-    this.kick = dancer.createKick(kickSettings);
-    this.events = events;
-    this.renderLoop = renderLoop;
-    if (typeof setup === 'undefined') {
+var SongSettings = function (options) {
+    this.url = options.url;
+    this.bpm = options.bpm;
+    this.kick = dancer.createKick(options.kickSettings);
+    this.events = options.events;
+    this.renderLoop = options.renderLoop;
+
+    // "setup" is an optional func run before each song starts, needs "done" callback
+    if (typeof options.setup === 'undefined') {
         this.setup = function () { };
     } else {
-        this.setup = setup;
+        this.setup = options.setup;
     }
 }
 
 // extension methodS for dancer.js follow 
 // feed this one a SongSettings object
 dancer.startNewSong = function (song) {
+    console.log(song);
     currentSong = song;
     this.load({ src: song.url });                
     song.events.forEach(function (event) {          
         dancer.onceAt(event.time, event.handler);   // register custom events    
     })
     song.kick.on();
+    song.setup(function() {console.log("song setup complete");});
     this.play();      
 }
 
@@ -118,7 +119,7 @@ function init() {
     if (Detector.webgl) {
         renderer = new THREE.WebGLRenderer({
             antialias: true,	// to get smoother output
-            preserveDrawingBuffer: true,	// to allow screenshot
+            //preserveDrawingBuffer: true,	// to allow screenshot
             alpha: true                     // allow transparency
         });
         renderer.setClearColor(0x000000, 0);
@@ -146,33 +147,34 @@ function init() {
     camera.position.set(0, 0, 460);
     scene.add(camera);
 
-    composer = new THREE.EffectComposer(renderer);
+    composer = new THREE.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+        format: THREE.RGBAFormat, // necessary for transparent rendering
+        minFilter: THREE.LinearFilter
+    }));
     composer.addPass(new THREE.RenderPass(scene, camera));
 
-    dotScreen = new THREE.ShaderPass(THREE.DotScreenShader);
-    dotScreen.uniforms['scale'].value = 4;
-    composer.addPass(dotScreen);
+    postFX.DotScreen = new THREE.ShaderPass(THREE.DotScreenShader);
+    postFX.DotScreen.uniforms['scale'].value = 4;
+    /*composer.addPass(postFX.DotScreen);*/
 
-    Kaleido = new THREE.ShaderPass(THREE.KaleidoShader);
-    Kaleido.uniforms['sides'].value = 4;
-    composer.addPass(Kaleido);
+    postFX.Kaleidoscope = new THREE.ShaderPass(THREE.KaleidoShader);
+    postFX.Kaleidoscope.uniforms['sides'].value = 4;
+    //postFX.Kaleidoscope.renderToScreen = true;
+    //composer.addPass(postFX.Kaleidoscope);
 
-    //Edge = new THREE.ShaderPass(THREE.EdgeShader2);
-    //Edge.uniforms['tDiffuse'].value = 20;
-    //composer.addPass(Edge);
+    postFX.hueSaturation = new THREE.ShaderPass(THREE.HueSaturationShader);
+    composer.addPass(postFX.hueSaturation);
 
-    rgbEffect = new THREE.ShaderPass(THREE.RGBShiftShader2);
-    rgbEffect.uniforms['amount'].value = 0.0033;
-    rgbEffect.renderToScreen = true;
-    composer.addPass(rgbEffect);
+    postFX.rgbShift = new THREE.ShaderPass(THREE.RGBShiftShader);
+    postFX.rgbShift.uniforms['amount'].value = 0.0033;
+    postFX.rgbShift.renderToScreen = true;
+    composer.addPass(postFX.rgbShift);
 
     // create a camera contol
     cameraControls = new THREEx.DragPanControls(camera)
 
     // transparently support window resize
     THREEx.WindowResize.bind(renderer, camera);
-    // allow 'p' to make screenshot
-    //THREEx.Screenshot.bindKey(renderer);
     // allow 'f' to go fullscreen where this feature is supported
     if (THREEx.FullScreen.available()) {
         THREEx.FullScreen.bindKey();
@@ -190,14 +192,6 @@ function init() {
     light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
                 .normalize().multiplyScalar(1.2);
     scene.add(light);
-    /*var light = new THREE.PointLight(Math.random() * 0xffffff);
-    light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
-                .normalize().multiplyScalar(1.2);
-    scene.add(light);*/
-    /*var light = new THREE.PointLight(Math.random() * 0xffffff);
-    light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
-                .normalize().multiplyScalar(1.2);
-    scene.add(light);*/
 
     for (var i = 1 ; i <= 240; i++) {
         var geometry = new THREE.BoxGeometry(.5, .5, .5);
@@ -223,11 +217,14 @@ function init() {
 
     // dat.gui code
     var gui = new dat.GUI();
-    gui.add(rgbEffect.uniforms['amount'], 'value').name("RGB Shift value").listen();
-    gui.add(rgbEffect.uniforms['angle'], 'value').name("RGB Shift angle").listen();
-    gui.add(dotScreen.uniforms['scale'], 'value').name("Dot Screen scale").listen();
-    gui.add(Kaleido.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
-    gui.add(Kaleido.uniforms['sides'], 'value').name("Kaledioscope sides")
+    gui.add(postFX.rgbShift.uniforms['amount'], 'value').name("RGB Shift value").listen();
+    gui.add(postFX.rgbShift.uniforms['angle'], 'value').name("RGB Shift angle").listen();
+    gui.add(postFX.hueSaturation.uniforms['hue'], 'value').name("Hue").listen();
+    gui.add(postFX.hueSaturation.uniforms['saturation'], 'value').name("Saturation").listen()
+        .min(0).max(10).step(0.05).listen();
+    gui.add(postFX.DotScreen.uniforms['scale'], 'value').name("Dot Screen scale").listen();
+    gui.add(postFX.Kaleidoscope.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
+    gui.add(postFX.Kaleidoscope.uniforms['sides'], 'value').name("Kaledioscope sides")
         .min(3).max(12).step(1).listen();
 }
 

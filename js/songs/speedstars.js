@@ -15,7 +15,7 @@ songs.Speedstars = new SongSettings(
     function () {
         // hook into the FFT of the song
         if (dancer.isPlaying()) {
-            renderer.setClearColor(dancer.getFrequency(160, 420) / 64 * 0xffffff, 1);
+            renderer.setClearColor(dancer.getFrequency(160, 420) / 64 * 0xffffff, 0.333);
             rgbEffect.uniforms['amount'].value = dancer.getFrequency(60, 80) * 4.20 * 1.5 - 0.005;
             rotationSpeed = 0.005 + dancer.getFrequency(0, 5);
             dotScreen.uniforms['scale'].value = 15 - dancer.getFrequency(80, 100) * 420;
@@ -31,7 +31,7 @@ songs.Speedstars = new SongSettings(
             if (object3d instanceof THREE.Mesh === false) return
             object3d.rotation.y = PIseconds * 0.0005 * (i % 2 ? 1 : -1);
             object3d.rotation.x = PIseconds * 0.0004 * (i % 2 ? 1 : -1);
-            object3d.position.z -= 0.5;
+            object3d.position.z += 1;
         });
         // animate PointLights
         scene.traverse(function (object3d, idx) {

@@ -17,6 +17,7 @@
 		<script src="js/shaders/RGBShiftShader2.js"></script>
 		<script src="js/shaders/DotScreenShader.js"></script>
         <script src="js/shaders/KaleidoShader.js"></script>
+        <script src="js/shaders/HueSaturationShader.js"></script>
         <script src="js/shaders/EdgeShader2.js"></script>
 		<script src="vendor/post/EffectComposer.js"></script>
 		<script src="vendor/post/RenderPass.js"></script>
@@ -30,7 +31,9 @@
 	</head>
 <body>
 	<!-- three.js container -->
-    	<div id="container"></div>
+    <div id="bg"></div>
+	<!-- three.js container -->
+    <div id="container"></div>
 	<!-- info on screen display -->
 	<div id="info">
 		<div class="bottom" id="inlineDoc" >
@@ -42,6 +45,6 @@
 	<script src="js/songs/speedstars.js"></script>
 	<script src="js/songs/slideways.js"></script>
 	<!--<script>setTimeout(function () { dancer.startNewSong(songs.Speedstars); }, 200);</script>-->
-	<script>setTimeout(function () { dancer.startNewSong(songs.Slideways); }, 100);</script>
+	<script>setTimeout(function () { dancer.startNewSong(songs.Slideways); }, 1000000);</script>
 </body>
 </html>
