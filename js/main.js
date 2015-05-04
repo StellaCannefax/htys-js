@@ -1,5 +1,6 @@
-﻿var stats, scene, renderer, composer, camera, cameraControl, currentSong, PIseconds;
+﻿var stats, scene, renderer, composer, camera, cameraControl, gui, currentSong, PIseconds;
 var canvas = document.getElementsByTagName("canvas")[0];
+var prepare = {};
 var postFX = {};
 
 // DANCER / SONG RELATED CODE IN HERE
@@ -52,6 +53,7 @@ dancer.clearAllIntervals = function () {
         clearInterval(e);       // stop all the shufflin'
     });
 }
+
 // WEBGL / THREE.js CODE AFTER HERE
 var randomIntTable = [];
 for (var i = 1e4, randomIntTable = []; i--;) {
@@ -61,6 +63,16 @@ for (var i = 1e4, randomIntTable = []; i--;) {
 }
 function randomInt() {
     return ++i >= randomIntTable.length ? randomIntTable[i = 0] : randomIntTable[i];
+}
+
+function makeRandomGeometries(sizes, count, geometryType, materialType) {
+    for (var i = 1 ; i <= count; i++) {
+        var geometry = new geometryType(sizes[0], sizes[1], sizes[2]);
+        var material = new materialType({ ambient: 0x888880, color: Math.random() * 0xffffff });
+        var mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        mesh.position.set(randomInt(), randomInt(), randomInt());
+    }
 }
 
 function shuffle(chance) {
@@ -80,30 +92,9 @@ function moveUp(distance) {
             object3d.position.y += distance;
         }
     })
-
 }
 
-function shuffleTween() {
-    var chance = 0.05;
-    scene.traverse(function (object3d, i) {
-        if (object3d instanceof THREE.Mesh === false) return
-        if (Math.random() < chance) {
-            newPosition = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-            moveObject(object3d, newPosition);
-        }
-    })
-}
-function addMultipleRandom(geometryType, count, size) {
-    for (var i = 1 ; i <= count; i++) {
-        var geometry = new geometryType(size, size, size);
-        var material = new THREE.MeshPhongMaterial({ ambient: 0x808080, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position = new THREE.Vector3(randomInt(), randomInt(), randomInt());
-    }
-}
 function moveObject(object, targetPosition) {
-    //TWEEN.removeAll();
     new TWEEN.Tween(object.position.x)
     .to(targetPosition.x, 2000)
     .easing(TWEEN.Easing.Elastic.InOut)
@@ -111,15 +102,11 @@ function moveObject(object, targetPosition) {
     .start();
 };
 
-if (!init()) animate();
-
-// init the scene
-function init() {
-
+// all these members of "prepare" run inside init()
+prepare.renderer = function () {
     if (Detector.webgl) {
         renderer = new THREE.WebGLRenderer({
             antialias: true,	// to get smoother output
-            //preserveDrawingBuffer: true,	// to allow screenshot
             alpha: true                     // allow transparency
         });
         renderer.setClearColor(0x000000, 0);
@@ -129,94 +116,57 @@ function init() {
     }
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('container').appendChild(renderer.domElement);
+}
 
-    // add Stats.js - https://github.com/mrdoob/stats.js
-    stats = new Stats();
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.bottom = '0px';
-    document.body.appendChild(stats.domElement);
-
-    // TODO: break this out so we can create new scenes per song
-    // create a scene
-    scene = new THREE.Scene();
-
-    // put a camera in the scene
+prepare.camera = function () {
     var cameraH = 3;
     var cameraW = cameraH / window.innerHeight * window.innerWidth;
     camera = new THREE.PerspectiveCamera(-cameraW / 2, +cameraW / 2, cameraH / 2, -cameraH / 2, -10000, 10000);
     camera.position.set(0, 0, 460);
     scene.add(camera);
+}
 
-    composer = new THREE.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-        format: THREE.RGBAFormat, // necessary for transparent rendering
-        minFilter: THREE.LinearFilter
-    }));
-    composer.addPass(new THREE.RenderPass(scene, camera));
+prepare.stats = function () {
+    stats = new Stats();
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.bottom = '0px';
+    document.body.appendChild(stats.domElement);
+}
 
-    postFX.DotScreen = new THREE.ShaderPass(THREE.DotScreenShader);
-    postFX.DotScreen.uniforms['scale'].value = 4;
-    /*composer.addPass(postFX.DotScreen);*/
-
-    postFX.Kaleidoscope = new THREE.ShaderPass(THREE.KaleidoShader);
-    postFX.Kaleidoscope.uniforms['sides'].value = 4;
-    //postFX.Kaleidoscope.renderToScreen = true;
-    //composer.addPass(postFX.Kaleidoscope);
-
-    postFX.hueSaturation = new THREE.ShaderPass(THREE.HueSaturationShader);
-    composer.addPass(postFX.hueSaturation);
-
-    postFX.rgbShift = new THREE.ShaderPass(THREE.RGBShiftShader);
-    postFX.rgbShift.uniforms['amount'].value = 0.0033;
-    postFX.rgbShift.renderToScreen = true;
-    composer.addPass(postFX.rgbShift);
-
-    // create a camera contol
-    cameraControls = new THREEx.DragPanControls(camera)
-
-    // transparently support window resize
-    THREEx.WindowResize.bind(renderer, camera);
-    // allow 'f' to go fullscreen where this feature is supported
-    if (THREEx.FullScreen.available()) {
-        THREEx.FullScreen.bindKey();
-    }
-
+prepare.lights = function() {
     var light = new THREE.AmbientLight(Math.random() * 0xffffff);
     scene.add(light);
-    var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
-    light.position.set(Math.random(), Math.random(), Math.random()).normalize();
-    scene.add(light);
-    var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
-    light.position.set(Math.random(), Math.random(), Math.random()).normalize();
-    scene.add(light);
+    for (var i = 0; i < 2; i++) {
+        var light = new THREE.DirectionalLight(Math.random() * 0xffffff);
+        light.position.set(Math.random(), Math.random(), Math.random()).normalize();
+        scene.add(light);
+    }
     var light = new THREE.PointLight(Math.random() * 0xffffff);
     light.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
                 .normalize().multiplyScalar(1.2);
     scene.add(light);
+}
 
-    for (var i = 1 ; i <= 240; i++) {
-        var geometry = new THREE.BoxGeometry(.5, .5, .5);
-        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position.set(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 200; i++) {
-        var geometry = new THREE.BoxGeometry(1, 1, 1);
-        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position.set(randomInt(), randomInt(), randomInt());
-    }
-    for (var i = 1 ; i <= 200; i++) {
-        var geometry = new THREE.BoxGeometry(.333, .333, .333);
-        var material = new THREE.MeshLambertMaterial({ ambient: 0x888880, color: Math.random() * 0xffffff });
-        var mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        mesh.position.set(randomInt(), randomInt(), randomInt());
-    }
+prepare.shaderPostFX = function() {
+    postFX.DotScreen = new THREE.ShaderPass(THREE.DotScreenShader);
+    postFX.DotScreen.uniforms['scale'].value = 4;
+    postFX.Kaleidoscope = new THREE.ShaderPass(THREE.KaleidoShader);
+    postFX.Kaleidoscope.uniforms['sides'].value = 4;
+    postFX.hueSaturation = new THREE.ShaderPass(THREE.HueSaturationShader);
+    postFX.rgbShift = new THREE.ShaderPass(THREE.RGBShiftShader);
+}
 
-    // dat.gui code
-    var gui = new dat.GUI();
+prepare.fxComposer = function() {
+    composer = new THREE.EffectComposer(renderer, new THREE.WebGLRenderTarget(
+        window.innerWidth, window.innerHeight, {
+            format: THREE.RGBAFormat,               // necessary for transparent rendering
+            minFilter: THREE.LinearFilter
+        }));
+    composer.addPass(new THREE.RenderPass(scene, camera));
+}
+
+prepare.datGUI = function() {
+    gui = new dat.GUI();
     gui.add(postFX.rgbShift.uniforms['amount'], 'value').name("RGB Shift value").listen();
     gui.add(postFX.rgbShift.uniforms['angle'], 'value').name("RGB Shift angle").listen();
     gui.add(postFX.hueSaturation.uniforms['hue'], 'value').name("Hue").listen();
@@ -226,6 +176,29 @@ function init() {
     gui.add(postFX.Kaleidoscope.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
     gui.add(postFX.Kaleidoscope.uniforms['sides'], 'value').name("Kaledioscope sides")
         .min(3).max(12).step(1).listen();
+}
+
+if (!init()) animate();
+
+// init the scene
+function init() {
+    scene = new THREE.Scene();
+    prepare.renderer();
+    prepare.camera();
+    prepare.stats();
+    prepare.lights();
+    prepare.shaderPostFX();
+    prepare.fxComposer();
+    prepare.datGUI();
+
+    cameraControls = new THREEx.DragPanControls(camera)
+    // transparently support window resize
+    THREEx.WindowResize.bind(renderer, camera);     // support window resizing
+
+    // insert starting geometry
+    makeRandomGeometries([.333, .333, .333], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
+    makeRandomGeometries([.5, .5, .5], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
+    makeRandomGeometries([1, 1, 1], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
 }
 
 // animation loop
@@ -244,6 +217,11 @@ function render() {
     if (currentSong != null) {
         currentSong.renderLoop();    
     }
-    // actually render the scene
-    composer.render(scene, camera);
+    // if we only have a RenderPass in the composer, skip it and directly render
+    // this allows instantiating the composer before we want to use effects
+    if (composer.passes.length > 1) {
+        composer.render(scene, camera);
+    } else {
+        renderer.render(scene, camera);
+    }
 }
