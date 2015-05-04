@@ -21,23 +21,16 @@ var SongSettings = function (options) {
     this.kick = dancer.createKick(options.kickSettings);
     this.events = options.events;
     this.renderLoop = options.renderLoop;
-
-    // "setup" is an optional func run before each song starts, needs "done" callback
-    if (typeof options.setup === 'undefined') {
-        this.setup = function () { };
-    } else {
-        this.setup = options.setup;
-    }
+    this.setup = options.setup;
 }
 
 // extension methodS for dancer.js follow 
-// feed this one a SongSettings object
-dancer.startNewSong = function (song) {
+dancer.startNewSong = function (song) {                 // takes a SongSettings object
     console.log(song);
     currentSong = song;
     this.load({ src: song.url });                
     song.events.forEach(function (event) {          
-        dancer.onceAt(event.time, event.handler);   // register custom events    
+        dancer.onceAt(event.time, event.handler);       // register all custom events    
     })
     song.kick.on();
     song.setup(function() {console.log("song setup complete");});
@@ -50,7 +43,7 @@ dancer.setInterval = function (func) {
 
 dancer.clearAllIntervals = function () {
     this.intervals.forEach(function (e) {
-        clearInterval(e);       // stop all the shufflin'
+        clearInterval(e);      
     });
 }
 
@@ -102,18 +95,12 @@ function moveObject(object, targetPosition) {
     .start();
 };
 
-// all these members of "prepare" run inside init()
-prepare.renderer = function () {
-    if (Detector.webgl) {
-        renderer = new THREE.WebGLRenderer({
-            antialias: true,	// to get smoother output
-            alpha: true                     // allow transparency
-        });
-        renderer.setClearColor(0x000000, 0);
-    } else {
-        Detector.addGetWebGLMessage();
-        return true;
-    }
+prepare.renderer = function () {                // all these members of "prepare" run inside init()
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,	                        // get smoother output
+        alpha: true                                 // allow transparency
+    });
+    renderer.setClearColor(0x000000, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('container').appendChild(renderer.domElement);
 }
@@ -128,8 +115,7 @@ prepare.camera = function () {
 
 prepare.stats = function () {
     stats = new Stats();
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.bottom = '0px';
+    stats.domElement.style.opacity = 0.5;
     document.body.appendChild(stats.domElement);
 }
 
@@ -178,9 +164,7 @@ prepare.datGUI = function() {
         .min(3).max(12).step(1).listen();
 }
 
-if (!init()) animate();
 
-// init the scene
 function init() {
     scene = new THREE.Scene();
     prepare.renderer();
@@ -191,37 +175,38 @@ function init() {
     prepare.fxComposer();
     prepare.datGUI();
 
+    THREEx.WindowResize.bind(renderer, camera);                 // support window resizing
     cameraControls = new THREEx.DragPanControls(camera)
-    // transparently support window resize
-    THREEx.WindowResize.bind(renderer, camera);     // support window resizing
 
-    // insert starting geometry
     makeRandomGeometries([.333, .333, .333], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
     makeRandomGeometries([.5, .5, .5], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
     makeRandomGeometries([1, 1, 1], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
 }
 
-// animation loop
 function animate() {
     requestAnimationFrame(animate);
     render();
     stats.update();
 }
 
-// render the scene
 function render() {
-    // variable which is increase by Math.PI every seconds - usefull for animation
     PIseconds = Date.now() * Math.PI;
     cameraControls.update();
-    //song-specific code that goes in the render loop
-    if (currentSong != null) {
-        currentSong.renderLoop();    
+
+    if (currentSong != null) {               
+        currentSong.renderLoop();           // song specific code here
     }
-    // if we only have a RenderPass in the composer, skip it and directly render
-    // this allows instantiating the composer before we want to use effects
-    if (composer.passes.length > 1) {
-        composer.render(scene, camera);
-    } else {
-        renderer.render(scene, camera);
+
+    if (composer.passes.length > 1) {           // if we only have a RenderPass in the composer    
+        composer.render(scene, camera);         // skip it and render from the renderer directly
+    } else {                                    // this allows instantiating the composer
+        renderer.render(scene, camera);         // before we want to use effects
     }
+}
+
+if (Detector.webgl) {                       // do stuff if we're WebGL compatible
+    init(); 
+    animate();
+} else {
+    Detector.addGetWebGLMessage();
 }

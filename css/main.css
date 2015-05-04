@@ -7,6 +7,18 @@
     z-index: -420;
 }
 
+#stats {
+    position: absolute;
+    bottom: 0px;
+}
+
+div.dg.ac ul {
+    opacity: 0.72;
+}
+.close-button {
+    opacity: 0.333;
+}
+
 body {
 	overflow	: hidden;
 	padding		: 0;
