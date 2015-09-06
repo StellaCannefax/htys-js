@@ -13,7 +13,7 @@ function bpm2ms(bpm) {
 }
 
 // events is an array of objects , each containing
-// "time" , the value in seconds for when to trigger, & 
+// "time" , the value in seconds for when to trigger, &
 // "handler", the function that actually modifies behavior
 var SongSettings = function (options) {
     this.url = options.url;
@@ -24,17 +24,17 @@ var SongSettings = function (options) {
     this.setup = options.setup;
 }
 
-// extension methodS for dancer.js follow 
+// extension methods for dancer.js follow
 dancer.startNewSong = function (song) {                 // takes a SongSettings object
     console.log(song);
     currentSong = song;
-    this.load({ src: song.url });                
-    song.events.forEach(function (event) {          
-        dancer.onceAt(event.time, event.handler);       // register all custom events    
+    this.load({ src: song.url });
+    song.events.forEach((event) => {
+        dancer.onceAt(event.time, event.handler);       // register all custom events
     })
     song.kick.on();
-    song.setup(function() {console.log("song setup complete");});
-    this.play();      
+    song.setup(() => {console.log("song setup done");});
+    this.play();
 }
 
 dancer.setInterval = function (func) {
@@ -42,8 +42,8 @@ dancer.setInterval = function (func) {
 }
 
 dancer.clearAllIntervals = function () {
-    this.intervals.forEach(function (e) {
-        clearInterval(e);      
+    this.intervals.forEach((e) => {
+        clearInterval(e);
     });
 }
 
@@ -98,7 +98,7 @@ function moveObject(object, targetPosition) {
 prepare.renderer = function () {                // all these members of "prepare" run inside init()
     renderer = new THREE.WebGLRenderer({
         antialias: true,	                        // get smoother output
-        alpha: true                                 // allow transparency
+        //alpha: true                                 // allow transparency
     });
     renderer.setClearColor(0x000000, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -139,6 +139,7 @@ prepare.shaderPostFX = function() {
     postFX.Kaleidoscope.uniforms['sides'].value = 4;
     postFX.hueSaturation = new THREE.ShaderPass(THREE.HueSaturationShader);
     postFX.rgbShift = new THREE.ShaderPass(THREE.RGBShiftShader);
+    postFX.badTV = new THREE.ShaderPass(THREE.BadTVShader);
 }
 
 prepare.fxComposer = function() {
@@ -161,6 +162,8 @@ prepare.datGUI = function() {
     gui.add(postFX.Kaleidoscope.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
     gui.add(postFX.Kaleidoscope.uniforms['sides'], 'value').name("Kaledioscope sides")
         .min(3).max(12).step(1).listen();
+    gui.add(postFX.badTV.uniforms['distortion'], 'value').min(1).max(100).step(1).listen().name("distortion");
+    gui.add(postFX.badTV.uniforms['distortion2'], 'value').name("distortion 2").min(1).max(100).step(1).listen();
 }
 
 
@@ -192,11 +195,11 @@ function render() {
     PIseconds = Date.now() * Math.PI;
     cameraControls.update();
 
-    if (currentSong != null) {               
+    if (currentSong != null) {
         currentSong.renderLoop();           // song specific code here
     }
 
-    if (composer.passes.length > 1) {           // if we only have a RenderPass in the composer,    
+    if (composer.passes.length > 1) {           // if we only have a RenderPass in the composer,
         composer.render(scene, camera);         // skip it and render from the renderer directly
     } else {                                    // this allows instantiating the composer
         renderer.render(scene, camera);         // before we want to use effects, which
@@ -204,7 +207,7 @@ function render() {
 }
 
 if (Detector.webgl) {                       // do stuff if we're WebGL compatible
-    init(); 
+    init();
     animate();
 } else {
     Detector.addGetWebGLMessage();

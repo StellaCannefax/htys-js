@@ -27,14 +27,14 @@ songs.Speedstars = new SongSettings({
             postFX.Kaleidoscope.uniforms['angle'].value += rotationSpeed;
         }
         // animation of all objects
-        scene.traverse(function (object3d, i) {
+        scene.traverse((object3d, i) => {
             if (object3d instanceof THREE.Mesh === false) return
             object3d.rotation.y = PIseconds * 0.0005 * (i % 2 ? 1 : -1);
             object3d.rotation.x = PIseconds * 0.0004 * (i % 2 ? 1 : -1);
             object3d.position.z += 1;
         });
         // animate PointLights
-        scene.traverse(function (object3d, idx) {
+        scene.traverse((object3d, idx) => {
             if (object3d instanceof THREE.PointLight === false) return
             var angle = 0.0005 * PIseconds * (idx % 2 ? 1 : -1) + idx * Math.PI / 3;
             object3d.position.set(Math.cos(angle) * 3, Math.sin(angle * 3) * 2, Math.cos(angle * 2))
@@ -90,5 +90,3 @@ songs.Speedstars = new SongSettings({
         makeRandomGeometries([1, 1, 1], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
     }
 });
-
-
