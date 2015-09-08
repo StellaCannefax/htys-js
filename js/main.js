@@ -3,6 +3,9 @@ var canvas = document.getElementsByTagName("canvas")[0];
 var prepare = {};
 var postFX = {};
 
+// Used in initParticles()
+var emitter, particleGroup;
+
 // DANCER / SONG RELATED CODE IN HERE
 var dancer = new Dancer();
 dancer.intervals = [];
@@ -77,24 +80,6 @@ function shuffle(chance) {
     })
 }
 
-function moveUp(distance) {
-    var chance = 0.5;
-    scene.traverse(function (object3d, i) {
-        if (object3d instanceof THREE.Mesh === false) return
-        if (Math.random() < chance) {
-            object3d.position.y += distance;
-        }
-    })
-}
-
-function moveObject(object, targetPosition) {
-    new TWEEN.Tween(object.position.x)
-    .to(targetPosition.x, 2000)
-    .easing(TWEEN.Easing.Elastic.InOut)
-    .onUpdate(render)
-    .start();
-};
-
 prepare.renderer = function () {                // all these members of "prepare" run inside init()
     renderer = new THREE.WebGLRenderer({
         antialias: true,	                        // get smoother output
@@ -140,6 +125,8 @@ prepare.shaderPostFX = function() {
     postFX.hueSaturation = new THREE.ShaderPass(THREE.HueSaturationShader);
     postFX.rgbShift = new THREE.ShaderPass(THREE.RGBShiftShader);
     postFX.badTV = new THREE.ShaderPass(THREE.BadTVShader);
+    postFX.film = new THREE.ShaderPass(THREE.FilmShader);
+    postFX.convolution = new THREE.ShaderPass(THREE.ConvolutionShader);
 }
 
 prepare.fxComposer = function() {
@@ -151,19 +138,66 @@ prepare.fxComposer = function() {
     composer.addPass(new THREE.RenderPass(scene, camera));
 }
 
+prepare.shaderGuiFolder = function (shaderPass, folderName, min, max, step) {
+    var folder = gui.addFolder(folderName)
+    for (var key in shaderPass.uniforms) {
+        console.log(key);
+        if (['tDiffuse', 'tSize', 'center'].indexOf(key) === -1) {
+            folder.add(shaderPass.uniforms[key], 'value')
+                .min(min).max(max).step(step).name(key).listen();
+        }
+    }
+}
+
 prepare.datGUI = function() {
     gui = new dat.GUI();
+
+
     gui.add(postFX.rgbShift.uniforms['amount'], 'value').name("RGB Shift value").listen();
     gui.add(postFX.rgbShift.uniforms['angle'], 'value').name("RGB Shift angle").listen();
+
     gui.add(postFX.hueSaturation.uniforms['hue'], 'value').name("Hue").listen();
     gui.add(postFX.hueSaturation.uniforms['saturation'], 'value').name("Saturation").listen()
         .min(0).max(10).step(0.05).listen();
+
     gui.add(postFX.DotScreen.uniforms['scale'], 'value').name("Dot Screen scale").listen();
+
     gui.add(postFX.Kaleidoscope.uniforms['angle'], 'value').name("Kaledioscope angle").listen();
     gui.add(postFX.Kaleidoscope.uniforms['sides'], 'value').name("Kaledioscope sides")
         .min(3).max(12).step(1).listen();
-    gui.add(postFX.badTV.uniforms['distortion'], 'value').min(1).max(100).step(1).listen().name("distortion");
-    gui.add(postFX.badTV.uniforms['distortion2'], 'value').name("distortion 2").min(1).max(100).step(1).listen();
+
+    gui.add(postFX.badTV.uniforms['distortion'], 'value')
+        .min(1).max(100).step(1).listen().name("distortion");
+    gui.add(postFX.badTV.uniforms['distortion2'], 'value')
+        .min(1).max(100).step(1).listen().name("distortion 2")
+
+
+    //gui.add(postFX.convolution.uniforms['tDiffuse'], 'value').name('tDiffuse');
+    //gui.add(postFX.film.uniforms['sCount'], 'value').name('sCount');
+
+    /*
+    prepare.shaderGuiFolder(postFX.DotScreen, "Dot Screen Shader", 0, 10, 0.1);
+    prepare.shaderGuiFolder(postFX.hueSaturation, "Hue / Saturation Shader", 0, 360, .1);
+    prepare.shaderGuiFolder(postFX.rgbShift, "RGB Shift Shader",0, 10, 0.01);
+    prepare.shaderGuiFolder(postFX.Kaleidoscope, "Kaleidoscope Shader", 0, 360, 1);
+    prepare.shaderGuiFolder(postFX.badTV, "Bad TV Shader", 0 , 100, 1);
+    */
+
+}
+
+function setNewScreenRenderPass (effectPass) {
+    // take previous screen renderer and disable
+    var passes = composer.passes;
+    var passIndex = passes.indexOf(effectPass);
+
+    //is this shader already in ? move it !
+    if (passIndex != -1) {
+        composer.passes.splice(passIndex);
+    }
+
+    passes[passes.length - 1].renderToScreen = false;
+    composer.addPass(effectPass);
+    passes[passes.length - 1].renderToScreen = true;
 }
 
 
@@ -178,7 +212,7 @@ function init() {
     prepare.datGUI();
 
     THREEx.WindowResize.bind(renderer, camera);                 // support window resizing
-    cameraControls = new THREEx.DragPanControls(camera)
+    cameraControls = new THREEx.DragPanControls(camera);
 
     makeRandomGeometries([.333, .333, .333], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
     makeRandomGeometries([.5, .5, .5], 200, THREE.BoxGeometry, THREE.MeshLambertMaterial);
@@ -208,6 +242,7 @@ function render() {
 
 if (Detector.webgl) {                       // do stuff if we're WebGL compatible
     init();
+    initParticles();
     animate();
 } else {
     Detector.addGetWebGLMessage();
