@@ -5,6 +5,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<script src="vendor/three.js/three.min.js"></script>
+		<script src="vendor/three.js/ShaderParticles.min.js"></script>
 		<script src="vendor/three.js/Detector.js"></script>
 		<script src="vendor/three.js/Stats.js"></script>
 		<script src="vendor/threex/THREEx.screenshot.js"></script>
@@ -24,10 +25,17 @@
 		<script src="vendor/post/MaskPass.js"></script>
 		<script src="vendor/post/ShaderPass.js"></script>
 		<script src="vendor/post/BadTVShader.js"></script>
+		<script src="vendor/post/FilmShader.js"></script>
+		<script src="vendor/post/ConvolutionShader.js"></script>
+		<script src="vendor/post/FilmPass.js"></script>
 		<script src="vendor/dancer.min.js"></script>
 		<script src="vendor/dat.gui.min.js"></script>
 		<script src="vendor/tween.min.js"></script>
 		<script src="vendor/jquery-reduced.min.js"></script>
+
+		<link href="http://vjs.zencdn.net/4.12/video-js.css" rel="stylesheet">
+		<script src="http://vjs.zencdn.net/4.12/video.js"></script>
+
 		<link  href="css/main.css" rel="stylesheet"/>
 	</head>
 <body>
@@ -45,6 +53,10 @@
 	<script src="js/main.js"></script>
 	<script src="js/songs/speedstars.js"></script>
 	<script src="js/songs/slideways.js"></script>
+
+	<video id="bgVideo" data-setup='{"controls": true, "autoplay": false, "preload": "auto"}'>
+		<source src="video/sandboarding.webm" type='video/webm'>
+	</video>
 	<!--<script>setTimeout(function () { dancer.startNewSong(songs.Speedstars); }, 200);</script>-->
 	<script>setTimeout(function () { dancer.startNewSong(songs.Slideways); }, 1000000);</script>
 </body>
